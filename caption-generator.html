@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CaptionAI – Social Media Caption Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: #2a2a3d;
+    --accent: #ff6b35;
+    --accent2: #ff9f1c;
+    --blue: #4f8ef7;
+    --pink: #e040fb;
+    --green: #00e5a0;
+    --text: #f0f0f8;
+    --muted: #7070a0;
+    --radius: 16px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background */
+  body::before {
+    content:'';
+    position:fixed; inset:0; z-index:0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 10%, rgba(255,107,53,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 80% 80%, rgba(79,142,247,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 60% 30%, rgba(224,64,251,0.05) 0%, transparent 50%);
+    pointer-events:none;
+  }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 0 20px; position:relative; z-index:1; }
+
+  /* Header */
+  header { padding: 40px 0 30px; text-align: center; }
+  .logo {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800;
+    letter-spacing: -0.5px; margin-bottom: 10px;
+  }
+  .logo-icon {
+    width:36px; height:36px; border-radius:10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; -webkit-text-fill-color: initial;
+    flex-shrink:0; box-shadow: 0 4px 20px rgba(255,107,53,0.4);
+  }
+  header p { color: var(--muted); font-size: 15px; font-weight:300; }
+
+  /* Platform Tabs */
+  .platform-tabs {
+    display: flex; gap: 8px; margin-bottom: 24px;
+    background: var(--surface); border-radius: 14px;
+    padding: 6px; border: 1px solid var(--border);
+  }
+  .platform-tab {
+    flex: 1; padding: 10px 8px; border: none; cursor: pointer;
+    border-radius: 10px; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500;
+    background: transparent; color: var(--muted);
+    transition: all 0.2s ease; display:flex; align-items:center;
+    justify-content:center; gap:6px;
+  }
+  .platform-tab:hover { color: var(--text); background: var(--surface2); }
+  .platform-tab.active {
+    color: #fff; font-weight: 600;
+  }
+  .platform-tab[data-platform="instagram"].active { background: linear-gradient(135deg, #f58529, #dd2a7b); }
+  .platform-tab[data-platform="facebook"].active { background: #1877f2; }
+  .platform-tab[data-platform="twitter"].active { background: #000; border: 1px solid #333; }
+  .platform-tab[data-platform="linkedin"].active { background: #0077b5; }
+
+  /* Main Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+  .card-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 10px;
+  }
+
+  textarea {
+    width: 100%; min-height: 110px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 15px;
+    padding: 14px 16px; resize: vertical; outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.6;
+  }
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--muted); }
+
+  /* Options Row */
+  .options-row {
+    display: flex; gap: 12px; margin-top: 16px; flex-wrap:wrap;
+  }
+  .select-wrap { flex:1; min-width:130px; }
+  .select-wrap label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+  select {
+    width:100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size:14px;
+    padding: 10px 12px; outline:none; cursor:pointer;
+    transition: border-color 0.2s;
+  }
+  select:focus { border-color: var(--accent); }
+
+  /* Toggle */
+  .toggle-row {
+    display:flex; align-items:center; gap:10px; margin-top:16px;
+    padding: 14px 16px; background:var(--surface2);
+    border-radius:12px; border:1px solid var(--border);
+  }
+  .toggle {
+    width:42px; height:24px; background:var(--border);
+    border-radius:99px; cursor:pointer; position:relative;
+    transition: background 0.2s; flex-shrink:0;
+  }
+  .toggle.on { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .toggle::after {
+    content:''; position:absolute; top:3px; left:3px;
+    width:18px; height:18px; border-radius:50%;
+    background:#fff; transition:transform 0.2s;
+    box-shadow:0 2px 6px rgba(0,0,0,0.3);
+  }
+  .toggle.on::after { transform: translateX(18px); }
+  .toggle-label { font-size:14px; color:var(--text); }
+  .toggle-badge {
+    margin-left:auto; font-size:11px; padding:3px 8px;
+    background: rgba(255,107,53,0.15); color:var(--accent);
+    border-radius:99px; font-weight:600;
+  }
+
+  /* Generate Button */
+  .generate-btn {
+    width:100%; padding:16px; margin-top:20px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border:none; border-radius:12px; cursor:pointer;
+    font-family:'Syne', sans-serif; font-size:16px; font-weight:700;
+    color:#fff; letter-spacing:0.3px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 24px rgba(255,107,53,0.3);
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .generate-btn:hover { transform:translateY(-2px); box-shadow: 0 8px 32px rgba(255,107,53,0.4); }
+  .generate-btn:active { transform:translateY(0); }
+  .generate-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+  /* Spinner */
+  .spinner {
+    width:18px; height:18px; border:2.5px solid rgba(255,255,255,0.3);
+    border-top-color:#fff; border-radius:50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* Results */
+  .results-section { display:none; }
+  .results-section.show { display:block; animation: fadeUp 0.4s ease; }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(16px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  .results-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:16px;
+  }
+  .results-title {
+    font-family:'Syne', sans-serif; font-size:18px; font-weight:700;
+  }
+  .results-count {
+    font-size:13px; color:var(--muted);
+    background:var(--surface2); padding:4px 12px;
+    border-radius:99px; border:1px solid var(--border);
+  }
+
+  .caption-card {
+    background: var(--surface2); border:1px solid var(--border);
+    border-radius:14px; padding:20px; margin-bottom:14px;
+    transition: border-color 0.2s, transform 0.2s;
+    position:relative; overflow:hidden;
+  }
+  .caption-card:hover { border-color: var(--accent); transform:translateY(-2px); }
+  .caption-card::before {
+    content:''; position:absolute; top:0; left:0;
+    width:3px; height:100%;
+    background: linear-gradient(180deg, var(--accent), var(--accent2));
+  }
+
+  .caption-number {
+    font-size:11px; font-weight:700; letter-spacing:1px;
+    text-transform:uppercase; color:var(--accent); margin-bottom:10px;
+  }
+  .caption-text {
+    font-size:15px; line-height:1.7; color:var(--text);
+    margin-bottom:14px; white-space:pre-wrap;
+  }
+  .hashtags {
+    display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px;
+  }
+  .hashtag {
+    font-size:13px; padding:4px 10px;
+    background: rgba(79,142,247,0.1); color: var(--blue);
+    border-radius:99px; border:1px solid rgba(79,142,247,0.2);
+    font-weight:500;
+  }
+  .copy-btn {
+    display:flex; align-items:center; gap:6px;
+    padding:8px 16px; background:transparent;
+    border:1px solid var(--border); border-radius:8px;
+    color:var(--muted); font-family:'DM Sans', sans-serif;
+    font-size:13px; cursor:pointer; transition:all 0.2s;
+  }
+  .copy-btn:hover { background:var(--surface); color:var(--text); border-color:var(--accent); }
+  .copy-btn.copied { color:var(--green); border-color:var(--green); }
+
+  /* Error */
+  .error-box {
+    background: rgba(255,80,80,0.1); border:1px solid rgba(255,80,80,0.3);
+    border-radius:12px; padding:16px; color:#ff8080;
+    font-size:14px; display:none; margin-top:16px;
+  }
+
+  /* API Key Input */
+  .api-section {
+    margin-bottom:20px; padding:16px 20px;
+    background: rgba(255,159,28,0.06);
+    border:1px solid rgba(255,159,28,0.2);
+    border-radius:14px;
+  }
+  .api-section p { font-size:13px; color:var(--muted); margin-bottom:10px; }
+  .api-input-row { display:flex; gap:10px; }
+  .api-input {
+    flex:1; background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; color:var(--text);
+    font-family:'DM Sans', sans-serif; font-size:14px;
+    padding:10px 14px; outline:none;
+    transition: border-color 0.2s;
+  }
+  .api-input:focus { border-color:var(--accent2); }
+  .api-save-btn {
+    padding:10px 18px; background:linear-gradient(135deg,var(--accent),var(--accent2));
+    border:none; border-radius:10px; color:#fff;
+    font-family:'DM Sans', sans-serif; font-size:14px; font-weight:600;
+    cursor:pointer; white-space:nowrap; transition:opacity 0.2s;
+  }
+  .api-save-btn:hover { opacity:0.85; }
+  .api-status { font-size:12px; margin-top:8px; }
+  .api-status.ok { color:var(--green); }
+  .api-status.err { color:#ff8080; }
+
+  @media (max-width:600px) {
+    .platform-tab span.label { display:none; }
+    .options-row { flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">✦</div>
+      CaptionAI
+    </div>
+    <p>Generate scroll-stopping captions & hashtags with AI</p>
+  </header>
+
+  <!-- API Key Section -->
+  <div class="api-section">
+    <p>🔑 Enter your <strong style="color:var(--accent2)">Anthropic API Key</strong> to power the AI (get one free at console.anthropic.com)</p>
+    <div class="api-input-row">
+      <input type="password" class="api-input" id="apiKey" placeholder="sk-ant-api03-..."/>
+      <button class="api-save-btn" onclick="saveKey()">Save Key</button>
+    </div>
+    <div class="api-status" id="apiStatus"></div>
+  </div>
+
+  <!-- Platform Tabs -->
+  <div class="platform-tabs">
+    <button class="platform-tab active" data-platform="instagram" onclick="setPlat(this)">
+      📸 <span class="label">Instagram</span>
+    </button>
+    <button class="platform-tab" data-platform="facebook" onclick="setPlat(this)">
+      👍 <span class="label">Facebook</span>
+    </button>
+    <button class="platform-tab" data-platform="twitter" onclick="setPlat(this)">
+      🐦 <span class="label">Twitter/X</span>
+    </button>
+    <button class="platform-tab" data-platform="linkedin" onclick="setPlat(this)">
+      💼 <span class="label">LinkedIn</span>
+    </button>
+  </div>
+
+  <!-- Input Card -->
+  <div class="card">
+    <div class="card-label">Describe Your Post</div>
+    <textarea id="postDesc" placeholder="e.g. I just launched my new clothing brand, feeling excited and grateful for the journey..."></textarea>
+
+    <div class="options-row">
+      <div class="select-wrap">
+        <label>Tone</label>
+        <select id="tone">
+          <option value="engaging">✨ Engaging</option>
+          <option value="funny">😄 Funny</option>
+          <option value="professional">💼 Professional</option>
+          <option value="inspirational">🔥 Inspirational</option>
+          <option value="casual">😎 Casual</option>
+          <option value="emotional">💙 Emotional</option>
+        </select>
+      </div>
+      <div class="select-wrap">
+        <label>Captions to Generate</label>
+        <select id="count">
+          <option value="3">3 Captions</option>
+          <option value="5" selected>5 Captions</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="toggle-row">
+      <div class="toggle on" id="hashToggle" onclick="toggleHash()"></div>
+      <span class="toggle-label">Generate Hashtags</span>
+      <span class="toggle-badge">#trending</span>
+    </div>
+
+    <button class="generate-btn" id="generateBtn" onclick="generate()">
+      <span>✦ Generate Captions</span>
+    </button>
+
+    <div class="error-box" id="errorBox"></div>
+  </div>
+
+  <!-- Results -->
+  <div class="results-section" id="resultsSection">
+    <div class="results-header">
+      <div class="results-title">Your Captions</div>
+      <div class="results-count" id="resultsCount">5 results</div>
+    </div>
+    <div id="captionsList"></div>
+  </div>
+
+</div>
+
+<script>
+  let selectedPlatform = 'instagram';
+  let hashtagsOn = true;
+  let apiKey = '';
+
+  function saveKey() {
+    apiKey = document.getElementById('apiKey').value.trim();
+    const st = document.getElementById('apiStatus');
+    if (apiKey.startsWith('sk-ant')) {
+      st.textContent = '✅ Key saved! Ready to generate.';
+      st.className = 'api-status ok';
+    } else {
+      st.textContent = '❌ Invalid key format. Should start with sk-ant...';
+      st.className = 'api-status err';
+    }
+  }
+
+  function setPlat(el) {
+    document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    selectedPlatform = el.dataset.platform;
+  }
+
+  function toggleHash() {
+    hashtagsOn = !hashtagsOn;
+    document.getElementById('hashToggle').classList.toggle('on', hashtagsOn);
+  }
+
+  async function generate() {
+    const desc = document.getElementById('postDesc').value.trim();
+    const tone = document.getElementById('tone').value;
+    const count = document.getElementById('count').value;
+    const btn = document.getElementById('generateBtn');
+    const errBox = document.getElementById('errorBox');
+
+    errBox.style.display = 'none';
+
+    if (!apiKey) {
+      errBox.textContent = '⚠️ Please enter your Anthropic API key above first!';
+      errBox.style.display = 'block'; return;
+    }
+    if (!desc) {
+      errBox.textContent = '⚠️ Please describe your post first!';
+      errBox.style.display = 'block'; return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div><span>Generating...</span>';
+
+    const platformGuides = {
+      instagram: 'Instagram (max 2200 chars, emoji-friendly, storytelling style)',
+      facebook: 'Facebook (conversational, community-focused, slightly longer ok)',
+      twitter: 'Twitter/X (max 280 characters, punchy, witty, concise)',
+      linkedin: 'LinkedIn (professional, value-driven, no slang)'
+    };
+
+    const hashInstruction = hashtagsOn
+      ? 'Also provide 5-8 relevant trending hashtags for each caption.'
+      : 'Do NOT include hashtags.';
+
+    const prompt = `You are a social media expert. Generate ${count} unique ${tone} captions for ${platformGuides[selectedPlatform]}.
+
+Post description: "${desc}"
+
+${hashInstruction}
+
+Respond ONLY in this exact JSON format (no markdown, no extra text):
+{
+  "captions": [
+    {
+      "text": "caption text here",
+      "hashtags": ["hashtag1", "hashtag2"]
+    }
+  ]
+}
+
+If hashtags are disabled, use empty arrays. Make each caption distinct and creative.`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1500,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error?.message || 'API error');
+      }
+
+      const raw = data.content[0].text.trim();
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(clean);
+
+      renderResults(parsed.captions);
+
+    } catch (err) {
+      errBox.textContent = '❌ Error: ' + err.message;
+      errBox.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span>✦ Generate Again</span>';
+    }
+  }
+
+  function renderResults(captions) {
+    const section = document.getElementById('resultsSection');
+    const list = document.getElementById('captionsList');
+    const countEl = document.getElementById('resultsCount');
+
+    countEl.textContent = captions.length + ' captions';
+    list.innerHTML = '';
+
+    captions.forEach((c, i) => {
+      const card = document.createElement('div');
+      card.className = 'caption-card';
+
+      const hashHTML = (c.hashtags && c.hashtags.length > 0)
+        ? `<div class="hashtags">${c.hashtags.map(h => `<span class="hashtag">#${h.replace('#','')}</span>`).join('')}</div>`
+        : '';
+
+      const fullText = c.text + (c.hashtags?.length ? '\n\n' + c.hashtags.map(h=>'#'+h.replace('#','')).join(' ') : '');
+
+      card.innerHTML = `
+        <div class="caption-number">Caption ${i+1}</div>
+        <div class="caption-text">${escHtml(c.text)}</div>
+        ${hashHTML}
+        <button class="copy-btn" onclick="copyCaption(this, \`${escJs(fullText)}\`)">
+          📋 Copy Caption
+        </button>
+      `;
+      list.appendChild(card);
+    });
+
+    section.classList.add('show');
+    section.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  function copyCaption(btn, text) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '✅ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.innerHTML = '📋 Copy Caption';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function escJs(s) {
+    return s.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$');
+  }
+</script>
+</body>
+</html>
